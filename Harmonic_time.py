@@ -1,45 +1,39 @@
-""" 
-Wigner function of the Double delta potential
-"""
-
 import matplotlib.pyplot as plt
-import numpy as np
-# from scipy.constants import hbar
-
 from matplotlib import cm
+import numpy as np
 from matplotlib.ticker import LinearLocator
-from scipy.integrate import quad
+
+
+# Wigner function of the harmonic oscillator ground state shifted in x by b 
 
 pi = np.pi
 h = 1
+m = 1/(2*pi)
+w = 1
+T = 2*pi/w
 hbar = h/(2*pi)
-d = R = 1
+a = np.sqrt(hbar/(m*w))
+b = 5
 
-def psi(x) :
-    return np.exp(-d*abs(x + 0.5*R)) + np.exp(-d*abs(x - 0.5*R))
-
-def fun(u, x, p) :
-    return psi(x + u/2) * np.conjugate(psi(x - u/2)) * np.exp(-1j*p*u/hbar)
-
-def Wigner(x, p) :
+def Wigner(x, p, t) :
     W = np.zeros((len(x), len(p)))
     for i in range(len(x)) :
         for j in range(len(p)) :
-            W[i][j] = quad(fun, -np.inf, np.inf, args=(x[i], p[j]))[0]
-    return 1/h * W
+            W[i][j] = 2/h * np.exp(-a*a/(hbar*hbar)*(p[j]*np.cos(w*t) + m*w*x[i]*np.sin(w*t))**2 - 1/(a*a)*(x[i]*np.cos(w*t) - p[j]/(m*w)*np.sin(w*t) - b)**2)
+    return W
 
-# Make data.
-x = np.arange(-2, 2, 0.1)
-p = np.arange(-0.2, 0.2, 0.01)
+# def Wigner(x, p, t) :
+#     W = np.zeros((len(x), len(p)))
+#     for i in range(len(x)) :
+#         for j in range(len(p)) :
+#             W[i][j] = 2/h * np.exp(-a*a/(hbar*hbar)*(p[j] + b*hbar/(a*a)*np.sin(w*t))**2 - 1/(a*a)*(x[i]-b*np.cos(w*t))**2)
+#     return W
 
-print("total length = ", len(x)*len(p))
+x = np.linspace(-8,8,1000)
+p = np.linspace(-1.5,1.5,1000)
 
-W = Wigner(x, p) ; W = W.T
+W = Wigner(x,p,0) + Wigner(x,p,T/4) + Wigner(x,p,T/2); W = W.T
 
-max = max([max(col) for col in W])
-min = min([min(col) for col in W])
-print("max = ", max)
-print("min = ", min)
 
 X, P = np.meshgrid(x, p)
 
@@ -50,7 +44,7 @@ surf = ax.plot_surface(X, P, W, cmap=cm.coolwarm,
                     linewidth=0, antialiased=False)
 
 # Customize the z axis.
-ax.set_zlim(min, max)
+ax.set_zlim(0, 2)
 ax.zaxis.set_major_locator(LinearLocator(10))
 # A StrMethodFormatter is used automatically
 ax.zaxis.set_major_formatter('{x:.02f}')
